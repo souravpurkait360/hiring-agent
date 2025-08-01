@@ -1,0 +1,50 @@
+default_weights:
+  resume_jd_match: 0.25
+  github_analysis: 0.20
+  linkedin_analysis: 0.10
+  technical_blogs: 0.15
+  project_quality: 0.15
+  work_experience: 0.10
+  social_presence: 0.05
+
+platform_weights:
+  github:
+    code_quality: 0.4
+    project_complexity: 0.3
+    contribution_consistency: 0.2
+    domain_relevance: 0.1
+  
+  linkedin:
+    technical_content: 0.5
+    professional_network: 0.2
+    endorsements: 0.2
+    certifications: 0.1
+  
+  twitter:
+    technical_content: 0.6
+    engagement_quality: 0.3
+    community_involvement: 0.1
+  
+  medium:
+    article_quality: 0.4
+    domain_expertise: 0.4
+    readership_engagement: 0.2
+  
+  projects:
+    technical_complexity: 0.3
+    code_quality: 0.25
+    live_deployment: 0.2
+    performance: 0.15
+    innovation: 0.1
+  
+  work_experience:
+    company_tier: 0.4
+    role_relevance: 0.3
+    tenure: 0.2
+    achievements: 0.1
+
+scoring_thresholds:
+  excellent: 85
+  good: 70
+  average: 55
+  below_average: 40

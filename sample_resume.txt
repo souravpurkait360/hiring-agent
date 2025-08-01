@@ -1,0 +1,75 @@
+JOHN DOE
+Senior Full Stack Developer
+Email: john.doe@email.com
+Phone: (555) 123-4567
+LinkedIn: https://linkedin.com/in/johndoe
+GitHub: https://github.com/johndoe
+
+PROFESSIONAL SUMMARY
+Experienced Full Stack Developer with 6+ years of expertise in modern web technologies. 
+Proficient in React, Node.js, Python, and cloud platforms. Strong background in building 
+scalable applications and leading development teams.
+
+TECHNICAL SKILLS
+• Frontend: React, Vue.js, JavaScript, TypeScript, HTML5, CSS3, Tailwind CSS
+• Backend: Node.js, Python, Django, Flask, Express.js, RESTful APIs
+• Databases: PostgreSQL, MongoDB, Redis, MySQL
+• Cloud & DevOps: AWS (EC2, S3, Lambda), Docker, Kubernetes, CI/CD
+• Tools: Git, Jest, Webpack, npm/yarn
+
+WORK EXPERIENCE
+
+Senior Full Stack Developer | TechCorp Inc. | 2021 - Present
+• Led development of e-commerce platform serving 100k+ users
+• Implemented microservices architecture using Node.js and Docker
+• Reduced page load times by 40% through performance optimization
+• Mentored junior developers and conducted code reviews
+
+Full Stack Developer | StartupXYZ | 2019 - 2021
+• Built responsive web applications using React and Django
+• Developed RESTful APIs and integrated third-party services
+• Collaborated with design team to implement pixel-perfect UIs
+• Participated in agile development process and sprint planning
+
+Software Engineer | DevSolutions | 2018 - 2019
+• Developed and maintained web applications using JavaScript and Python
+• Implemented automated testing and continuous integration
+• Fixed bugs and improved application performance
+• Worked closely with QA team to ensure code quality
+
+EDUCATION
+Bachelor of Science in Computer Science | State University | 2018
+• Relevant Coursework: Data Structures, Algorithms, Software Engineering, Database Systems
+
+PROJECTS
+
+E-Commerce Platform (2022)
+• Built full-stack e-commerce application using React, Node.js, and PostgreSQL
+• Implemented payment processing with Stripe API
+• Deployed on AWS with auto-scaling capabilities
+• Technologies: React, Node.js, PostgreSQL, AWS, Docker
+• Live URL: https://ecommerce-demo.johndoe.dev
+
+Task Management App (2021)
+• Developed collaborative task management application
+• Real-time updates using WebSocket connections
+• User authentication and authorization system
+• Technologies: Vue.js, Express.js, MongoDB
+• GitHub: https://github.com/johndoe/task-manager
+
+Personal Portfolio (2020)
+• Responsive portfolio website showcasing projects and skills
+• SEO optimized and performance focused
+• Integrated with headless CMS for content management
+• Technologies: Next.js, TailwindCSS, Contentful
+• Live URL: https://johndoe.dev
+
+CERTIFICATIONS
+• AWS Certified Solutions Architect - Associate (2022)
+• React Developer Certification - Meta (2021)
+
+ADDITIONAL INFORMATION
+• Active contributor to open-source projects
+• Medium blog: https://medium.com/@johndoe (20+ technical articles)
+• Twitter: https://twitter.com/johndoe_dev
+• Fluent in English and Spanish

@@ -1,0 +1,27 @@
+# Claude Code Configuration
+
+## Project Type
+hiring-agent
+
+## Languages
+python, javascript, html, css
+
+## Frameworks
+fastapi, langgraph, pydantic, tailwindcss
+
+## Key Files
+- app/main.py: Main FastAPI application
+- app/agents/graph.py: LangGraph workflow
+- app/models/schemas.py: Data models
+- frontend/index.html: Main UI
+- config/weights.yaml: Scoring configuration
+- CLAUDE.md: Project documentation
+
+## Important Commands
+- Start server: uvicorn app.main:app --reload
+- Run tests: python run_test.py
+- Install deps: pip install -r requirements.txt
+
+## Environment
+- Requires OPENAI_API_KEY
+- Optional: GITHUB_TOKEN, LINKEDIN_TOKEN, TWITTER_BEARER_TOKEN, MEDIUM_TOKEN
