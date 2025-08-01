@@ -7,7 +7,8 @@ import json
 
 class CompanyService:
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def research_company(self, company_name: str, role: str) -> CompanyAnalysis:
         try:

@@ -10,7 +10,8 @@ import json
 class MediumService:
     def __init__(self):
         self.token = os.getenv("MEDIUM_TOKEN")
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def analyze_profile(self, username: str, domain: str) -> MediumAnalysis:
         async with httpx.AsyncClient() as client:

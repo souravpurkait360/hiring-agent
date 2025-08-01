@@ -22,11 +22,8 @@ class ConnectionManager:
         await websocket.send_text(message)
     
     async def send_progress_update(self, analysis_id: str, state: Dict):
-        print(f"DEBUG: WebSocket send_progress_update called for analysis {analysis_id}")
-        print(f"DEBUG: Active connections for analysis: {analysis_id in self.active_connections}")
         
         if analysis_id in self.active_connections:
-            print(f"DEBUG: Building progress message for {len(self.active_connections[analysis_id])} connections")
             
             progress_list = [
                 {
@@ -34,13 +31,12 @@ class ConnectionManager:
                     "task_name": task.task_name,
                     "status": task.status,
                     "progress_percentage": task.progress_percentage,
-                    "message": task.message
+                    "message": task.message,
+                    "score": getattr(task, 'score', None)
                 }
                 for task in state.get("progress", [])
             ]
             
-            print(f"DEBUG: Progress list has {len(progress_list)} tasks")
-            print(f"DEBUG: Final analysis exists: {state.get('final_analysis') is not None}")
             
             message = {
                 "type": "progress_update",
@@ -50,26 +46,19 @@ class ConnectionManager:
                 "thinking_data": self._extract_thinking_data(state)
             }
             
-            print(f"DEBUG: Sending message to {len(self.active_connections[analysis_id])} connections")
             
             for connection in self.active_connections[analysis_id]:
                 try:
                     await connection.send_text(json.dumps(message, default=str))
-                    print(f"DEBUG: Message sent successfully to one connection")
                 except Exception as e:
                     print(f"WebSocket send error: {e}")
                     import traceback
-                    print(f"DEBUG: WebSocket error traceback: {traceback.format_exc()}")
                     pass
-        else:
-            print(f"DEBUG: No active connections found for analysis {analysis_id}")
     
     async def send_thinking_update(self, analysis_id: str, task_id: str, content: str):
         """Send thinking/analysis content for a specific task"""
-        print(f"DEBUG: WebSocket send_thinking_update called for analysis {analysis_id}, task {task_id}")
         
         if analysis_id in self.active_connections:
-            print(f"DEBUG: Sending thinking update to {len(self.active_connections[analysis_id])} connections")
             message = {
                 "type": "thinking_update",
                 "analysis_id": analysis_id,
@@ -80,18 +69,13 @@ class ConnectionManager:
             for connection in self.active_connections[analysis_id]:
                 try:
                     await connection.send_text(json.dumps(message))
-                    print(f"DEBUG: Thinking update sent successfully")
                 except Exception as e:
                     print(f"WebSocket thinking update error: {e}")
                     import traceback
-                    print(f"DEBUG: Thinking update error traceback: {traceback.format_exc()}")
                     pass
-        else:
-            print(f"DEBUG: No active connections for thinking update - analysis {analysis_id}")
     
     def _extract_thinking_data(self, state: Dict) -> Dict:
         """Extract analysis data for the thinking section"""
-        print(f"DEBUG: Extracting thinking data from state")
         thinking_data = {}
         
         # GitHub Analysis
@@ -188,10 +172,8 @@ class ConnectionManager:
 
     async def send_final_analysis_stream(self, analysis_id: str, content: str, is_complete: bool = False):
         """Stream final analysis results in real-time"""
-        print(f"DEBUG: WebSocket send_final_analysis_stream called for analysis {analysis_id}")
         
         if analysis_id in self.active_connections:
-            print(f"DEBUG: Streaming final analysis to {len(self.active_connections[analysis_id])} connections")
             message = {
                 "type": "final_analysis_stream",
                 "analysis_id": analysis_id,
@@ -202,13 +184,9 @@ class ConnectionManager:
             for connection in self.active_connections[analysis_id]:
                 try:
                     await connection.send_text(json.dumps(message))
-                    print(f"DEBUG: Final analysis stream sent successfully")
                 except Exception as e:
                     print(f"WebSocket final analysis stream error: {e}")
                     import traceback
-                    print(f"DEBUG: Final analysis stream error traceback: {traceback.format_exc()}")
                     pass
-        else:
-            print(f"DEBUG: No active connections for final analysis stream - analysis {analysis_id}")
 
 manager = ConnectionManager()

@@ -22,6 +22,7 @@ class TaskProgress(BaseModel):
     task_name: str
     status: AnalysisStatus
     progress_percentage: float = 0.0
+    score: Optional[float] = None  # Analysis score (0-100)
     message: Optional[str] = None
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
@@ -126,6 +127,7 @@ class CandidateAnalysis(BaseModel):
 class AnalysisRequest(BaseModel):
     job_description: JobDescription
     resume: Resume
+    weight_mode: Optional[str] = "professional"  # "professional" or "fresher"
     custom_weights: Optional[Dict[str, float]] = None
 
 class AnalysisResponse(BaseModel):

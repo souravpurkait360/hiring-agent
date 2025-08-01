@@ -10,7 +10,8 @@ class TwitterService:
     def __init__(self):
         self.bearer_token = os.getenv("TWITTER_BEARER_TOKEN")
         self.headers = {"Authorization": f"Bearer {self.bearer_token}"} if self.bearer_token else {}
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def analyze_profile(self, username: str, domain: str) -> TwitterAnalysis:
         async with httpx.AsyncClient() as client:

@@ -32,6 +32,7 @@ class AgentState(TypedDict):
     project_analyses: List[ProjectAnalysis]
     company_analyses: List[CompanyAnalysis]
     final_analysis: Optional[CandidateAnalysis]
+    weight_mode: Optional[str]
     custom_weights: Optional[Dict[str, float]]
     errors: List[str]
 
@@ -39,14 +40,10 @@ def safe_analysis_wrapper(analysis_func, task_name):
     """Wrapper to ensure analysis tasks complete or fail gracefully"""
     async def wrapped_func(state):
         try:
-            print(f"DEBUG: Starting {task_name} analysis")
             result = await analysis_func(state)
-            print(f"DEBUG: Completed {task_name} analysis successfully")
             return result
         except Exception as e:
-            print(f"DEBUG: {task_name} analysis failed with error: {e}")
             import traceback
-            print(f"DEBUG: {task_name} traceback: {traceback.format_exc()}")
             
             # Update task progress to failed but continue workflow
             from app.models.schemas import AnalysisStatus
@@ -87,7 +84,6 @@ def create_hiring_agent_graph():
     
     workflow.add_edge("final_score", END)
     
-    print("DEBUG: LangGraph workflow created with safe wrappers")
     
     return workflow.compile()
 
@@ -102,6 +98,7 @@ class HiringAgentOrchestrator:
         analysis_id: str,
         resume: Resume, 
         job_description: JobDescription,
+        weight_mode: Optional[str] = "professional",
         custom_weights: Optional[Dict[str, float]] = None,
         progress_callback = None
     ) -> AgentState:
@@ -160,6 +157,7 @@ class HiringAgentOrchestrator:
             "project_analyses": [],
             "company_analyses": [],
             "final_analysis": None,
+            "weight_mode": weight_mode,
             "custom_weights": custom_weights,
             "errors": []
         }
@@ -171,7 +169,6 @@ class HiringAgentOrchestrator:
             return await self._run_simple_workflow(analysis_id, initial_state, progress_callback)
         
         try:
-            print(f"DEBUG: Starting LangGraph execution for analysis {analysis_id}")
             final_state = initial_state
             step_count = 0
             
@@ -182,44 +179,31 @@ class HiringAgentOrchestrator:
                 nonlocal final_state, step_count
                 async for output in self.graph.astream(initial_state):
                     step_count += 1
-                    print(f"DEBUG: LangGraph step {step_count} - output type: {type(output)}")
                     
                     # LangGraph 0.6+ returns dict with node names as keys
                     if isinstance(output, dict):
-                        print(f"DEBUG: Processing dict output with keys: {list(output.keys())}")
                         for node_name, state in output.items():
-                            print(f"DEBUG: Processing node '{node_name}' output")
                             final_state = state
                             self.active_analyses[analysis_id] = state
                             if progress_callback:
-                                print(f"DEBUG: Calling progress callback for node '{node_name}'")
                                 await progress_callback(analysis_id, state)
-                            else:
-                                print(f"DEBUG: No progress callback provided")
                     else:
                         # Fallback for different output format
-                        print(f"DEBUG: Processing non-dict output")
                         final_state = output
                         self.active_analyses[analysis_id] = output
                         if progress_callback:
-                            print(f"DEBUG: Calling progress callback for fallback output")
                             await progress_callback(analysis_id, output)
             
             # Run with 5 minute timeout
             try:
                 await asyncio.wait_for(run_with_timeout(), timeout=300)
             except asyncio.TimeoutError:
-                print(f"DEBUG: LangGraph execution timed out after 5 minutes")
                 final_state["errors"].append("Analysis timed out after 5 minutes")
             
-            print(f"DEBUG: LangGraph execution completed after {step_count} steps")
-            print(f"DEBUG: Final state keys: {list(final_state.keys()) if isinstance(final_state, dict) else 'not a dict'}")
             return final_state
         
         except Exception as e:
-            print(f"DEBUG: LangGraph execution error: {e}")
             import traceback
-            print(f"DEBUG: LangGraph error traceback: {traceback.format_exc()}")
             initial_state["errors"].append(str(e))
             self.active_analyses[analysis_id] = initial_state
             return initial_state
@@ -229,11 +213,9 @@ class HiringAgentOrchestrator:
     
     async def _run_simple_workflow(self, analysis_id: str, state: AgentState, progress_callback):
         """Run a simplified sequential workflow to ensure completion"""
-        print(f"DEBUG: Starting simple workflow for analysis {analysis_id}")
         
         try:
             # Step 1: Resume-JD Matching
-            print(f"DEBUG: Running resume-JD matching")
             state = await resume_jd_matcher(state)
             self.active_analyses[analysis_id] = state
             if progress_callback:
@@ -250,16 +232,12 @@ class HiringAgentOrchestrator:
             ]
             
             for task_name, task_func in analysis_tasks:
-                print(f"DEBUG: Running {task_name} analysis")
                 try:
                     import asyncio
                     state = await asyncio.wait_for(task_func(state), timeout=60)  # 1 minute timeout per task
-                    print(f"DEBUG: {task_name} analysis completed")
                 except asyncio.TimeoutError:
-                    print(f"DEBUG: {task_name} analysis timed out")
                     state["errors"].append(f"{task_name} analysis timed out")
                 except Exception as e:
-                    print(f"DEBUG: {task_name} analysis failed: {e}")
                     state["errors"].append(f"{task_name} analysis failed: {str(e)}")
                 
                 self.active_analyses[analysis_id] = state
@@ -267,13 +245,10 @@ class HiringAgentOrchestrator:
                     await progress_callback(analysis_id, state)
             
             # Step 3: Final Scoring - ensure this always runs
-            print(f"DEBUG: Running final scoring")
             try:
                 import asyncio
                 state = await asyncio.wait_for(final_scorer(state), timeout=120)  # 2 minute timeout for final scoring
-                print(f"DEBUG: Final scoring completed successfully")
             except asyncio.TimeoutError:
-                print(f"DEBUG: Final scoring timed out")
                 state["errors"].append("Final scoring timed out")
                 # Create a basic final analysis if scoring times out
                 from app.models.schemas import CandidateAnalysis
@@ -292,22 +267,17 @@ class HiringAgentOrchestrator:
                     detailed_report="Analysis completed with errors. Some components may have timed out."
                 )
             except Exception as e:
-                print(f"DEBUG: Final scoring failed: {e}")
                 import traceback
-                print(f"DEBUG: Final scoring error traceback: {traceback.format_exc()}")
                 state["errors"].append(f"Final scoring failed: {str(e)}")
             
             self.active_analyses[analysis_id] = state
             if progress_callback:
                 await progress_callback(analysis_id, state)
             
-            print(f"DEBUG: Simple workflow completed")
             return state
             
         except Exception as e:
-            print(f"DEBUG: Simple workflow error: {e}")
             import traceback
-            print(f"DEBUG: Simple workflow traceback: {traceback.format_exc()}")
             state["errors"].append(f"Workflow error: {str(e)}")
             return state
     

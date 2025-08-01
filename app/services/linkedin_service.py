@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 class LinkedInService:
     def __init__(self):
         self.token = os.getenv("LINKEDIN_TOKEN")
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def analyze_profile(self, profile_url: str, domain: str) -> LinkedInAnalysis:
         async with httpx.AsyncClient() as client:

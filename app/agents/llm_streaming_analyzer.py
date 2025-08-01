@@ -19,14 +19,13 @@ async def generate_llm_streaming_analysis(
     analysis_id = state.get("analysis_id")
     
     if not analysis_id:
-        print("DEBUG: No analysis_id found for streaming")
         return "Analysis ID not found"
     
     try:
-        print("DEBUG: Starting LLM streaming analysis")
         
         # Initialize LLM
-        llm = ChatOpenAI(model="gpt-4", temperature=0.3)
+        from config.settings import settings
+        llm = ChatOpenAI(model=settings.get_model(), temperature=0.3)
         
         # Extract all available data for context
         resume = state['resume']
@@ -39,6 +38,9 @@ async def generate_llm_streaming_analysis(
         company_analyses = state.get('company_analyses', [])
         
         # Build comprehensive data context for LLM
+        job_requirements = getattr(job_description, 'requirements', [])
+        job_preferred_skills = getattr(job_description, 'preferred_skills', [])
+        
         context_data = f"""CANDIDATE ANALYSIS DATA:
 
 BASIC INFO:
@@ -47,13 +49,15 @@ BASIC INFO:
 - Experience: {getattr(resume, 'experience_years', 'Not specified')} years
 - Skills: {', '.join(getattr(resume, 'skills', []))}
 
-JOB REQUIREMENTS:
+JOB REQUIREMENTS (ONLY EVALUATE AGAINST THESE):
 - Position: {job_title}
 - Company: {job_company}
 - Domain: {job_domain}
 - Experience Level: {getattr(job_description, 'experience_level', 'Not specified')}
-- Requirements: {', '.join(getattr(job_description, 'requirements', []))}
-- Preferred Skills: {', '.join(getattr(job_description, 'preferred_skills', []))}
+- REQUIRED SKILLS/TECHNOLOGIES: {', '.join(job_requirements) if job_requirements else 'None specified'}
+- PREFERRED SKILLS/TECHNOLOGIES: {', '.join(job_preferred_skills) if job_preferred_skills else 'None specified'}
+
+⚠️ CRITICAL: Only evaluate the candidate against the REQUIRED and PREFERRED skills listed above. Do NOT mention or evaluate against any technologies, frameworks, or skills that are not explicitly listed in the job requirements above.
 
 TECHNICAL ANALYSIS:"""
 
@@ -96,23 +100,44 @@ RESUME EXPERIENCE:"""
                 context_data += f"\n- {exp.get('role', 'Unknown Role')} at {exp.get('company', 'Unknown Company')}"
         
         # Stream Part 1: Executive Summary
-        print("DEBUG: Generating executive summary with LLM")
-        await manager.send_final_analysis_stream(analysis_id, "# 📋 COMPREHENSIVE CANDIDATE ANALYSIS REPORT\n\n🔄 **Generating executive summary...**")
+        await manager.send_final_analysis_stream(analysis_id, """# 📋 COMPREHENSIVE CANDIDATE ANALYSIS REPORT
+
+🔄 **Generating executive summary...**""")
         
-        executive_prompt = f"""Based on the following candidate data, write a comprehensive executive summary for a hiring decision report.
+        executive_prompt = f"""Based on the following candidate data, write a comprehensive executive summary for a hiring decision report. Format your response in clear, well-structured markdown.
+
+🚨 CRITICAL RULE: You MUST ONLY evaluate the candidate against the exact skills, technologies, and requirements explicitly listed in the job description. DO NOT evaluate against any other skills, frameworks, or technologies not mentioned in the job requirements.
 
 {context_data}
 
-Write a professional executive summary that includes:
-1. Candidate overview
-2. Position fit assessment
-3. Key qualifications
-4. Overall recommendation
+**FORBIDDEN ACTIONS - DO NOT DO THESE:**
+❌ Do NOT mention skills like Java, Go, AWS, GCP, Redis, Docker, Kubernetes unless they are explicitly listed in the job requirements above
+❌ Do NOT evaluate against "commonly expected" skills for the role type
+❌ Do NOT assume additional technical requirements beyond what is stated in the job description
+❌ Do NOT penalize the candidate for not having skills that aren't required for the job
+❌ Do NOT mention ANY technology, framework, or skill that is not explicitly listed in the REQUIRED or PREFERRED skills above
 
-Keep it concise but informative. Use professional language suitable for hiring managers."""
+**CRITICAL FORMATTING REQUIREMENTS:**
+- Use proper markdown headers with proper spacing (## Header Name)
+- Include bullet points and numbered lists where appropriate
+- Use **bold** for key metrics and important points
+- Use *italic* for emphasis
+- Include relevant scores and metrics
+- Make it scannable and professional
+- Ensure proper line breaks between sections
+- Start each section with a clear markdown header
+
+**Content Structure:**
+1. **Candidate Overview** - Brief introduction with key stats
+2. **Position Fit Assessment** - How well they match the role based ONLY on job requirements listed
+3. **Key Strengths** - Top 3-4 strengths with evidence relevant to job requirements
+4. **Qualification Summary** - Technical and professional qualifications relevant to job requirements
+5. **Initial Recommendation** - Preliminary hiring decision based on job requirements
+
+Keep each section concise but detailed with specific evidence from the analysis. Only discuss skills and technologies mentioned in the job requirements."""
 
         executive_response = await llm.ainvoke([
-            SystemMessage(content="You are an expert hiring analyst. Write professional, concise analysis suitable for hiring decisions."),
+            SystemMessage(content="You are an expert hiring analyst. Write professional, concise analysis suitable for hiring decisions. 🚨 CRITICAL: Only evaluate the candidate against the exact skills and requirements explicitly listed in the job description. DO NOT mention skills like Java, Go, AWS, GCP, Redis unless they are explicitly listed in the job requirements. DO NOT evaluate against commonly expected skills or assume additional requirements. Format all responses in clean, well-structured markdown with proper headers, bullet points, and line breaks."),
             HumanMessage(content=executive_prompt)
         ])
         
@@ -130,24 +155,62 @@ Keep it concise but informative. Use professional language suitable for hiring m
         await asyncio.sleep(0.8)
         
         # Stream Part 2: Technical Assessment
-        print("DEBUG: Generating technical assessment with LLM")
         await manager.send_final_analysis_stream(analysis_id, "🔄 **Analyzing technical capabilities...**")
         
-        technical_prompt = f"""Based on the candidate's technical data, provide a detailed technical assessment:
+        technical_prompt = f"""Based on the candidate's technical data, provide a detailed technical assessment. Format your response in clear, well-structured markdown.
+
+🚨 CRITICAL RULE: You MUST ONLY evaluate the candidate against the exact skills, technologies, and requirements explicitly listed in the job description. DO NOT evaluate against any other skills, frameworks, or technologies not mentioned in the job requirements.
 
 {context_data}
 
-Analyze:
-1. Technical skill alignment with role requirements
-2. Code quality and GitHub presence
-3. Project portfolio strength
-4. Programming language expertise
-5. Technical complexity of work
+**FORBIDDEN ACTIONS - DO NOT DO THESE:**
+❌ Do NOT mention skills like Java, Go, AWS, GCP, Redis, Docker, Kubernetes unless they are explicitly listed in the job requirements above
+❌ Do NOT evaluate against "commonly expected" skills for the role type
+❌ Do NOT assume additional technical requirements beyond what is stated in the job description
+❌ Do NOT use phrases like "typically required for this role" or "standard for this position"
+❌ Do NOT mention ANY technology, framework, or skill that is not explicitly listed in the REQUIRED or PREFERRED skills above
 
-Provide specific examples and scores where available. Be objective and detailed."""
+**CRITICAL FORMATTING REQUIREMENTS:**
+- Use proper markdown headers (##, ###)
+- Include bullet points and numbered lists
+- Use **bold** for scores, metrics, and key technologies
+- Use code blocks for languages/tech stacks
+- Make technical data easily scannable
+
+**Content Structure:**
+### 🔧 Technical Skills Analysis
+- **Primary Languages**: Only mention languages from candidate's profile that are also in job requirements
+- **Frameworks & Tools**: Only mention tools/frameworks from candidate's profile that are also in job requirements
+- **Architecture Experience**: Only discuss relevant to job requirements
+
+### 💻 Code Quality Assessment
+- **GitHub Statistics**: Repos, commits, followers
+- **Code Quality Score**: {getattr(github_analysis, 'code_quality_score', 'N/A') if github_analysis else 'N/A'}/100
+- **Project Complexity**: Evidence of development in technologies mentioned in job requirements
+
+### 🏗️ Project Portfolio Review
+- **Live Projects**: Only evaluate projects using technologies mentioned in job requirements
+- **Technical Complexity**: Only assess complexity in context of job requirements
+- **Innovation Factor**: Only mention modern practices relevant to job requirements
+
+### 📊 Skills vs Requirements Matrix
+**MANDATORY APPROACH**: Create a table/list that ONLY includes the exact skills/technologies listed in the job requirements section above.
+
+For EACH requirement listed in the job description:
+- **Required Skill X**: [Yes/No] - [Evidence from candidate's profile if available]
+
+For EACH preferred skill listed in the job description:
+- **Preferred Skill Y**: [Yes/No] - [Evidence from candidate's profile if available]
+
+**EXAMPLE FORMAT:**
+- **JavaScript** (Required): Yes - Demonstrated in 3 GitHub projects
+- **React** (Required): Yes - Used in portfolio projects  
+- **Node.js** (Preferred): No - No evidence found
+
+DO NOT ADD ANY SKILLS NOT EXPLICITLY LISTED IN THE JOB REQUIREMENTS ABOVE."""
 
         technical_response = await llm.ainvoke([
-            SystemMessage(content="You are a technical hiring specialist. Analyze technical capabilities objectively."),
+            SystemMessage(content="You are a technical hiring specialist. 🚨 CRITICAL: Analyze technical capabilities objectively against ONLY the specific skills and technologies mentioned in the job requirements. DO NOT mention skills like Java, Go, AWS, GCP, Redis unless they are explicitly listed in the job requirements. DO NOT evaluate against commonly expected skills or assume additional requirements. Format all responses in clean, well-structured markdown with proper headers, bullet points, and line breaks."),
             HumanMessage(content=technical_prompt)
         ])
         
@@ -162,24 +225,43 @@ Provide specific examples and scores where available. Be objective and detailed.
         await asyncio.sleep(0.8)
         
         # Stream Part 3: Professional Background
-        print("DEBUG: Generating professional background analysis with LLM")
         await manager.send_final_analysis_stream(analysis_id, "🔄 **Evaluating professional background...**")
         
-        professional_prompt = f"""Analyze the candidate's professional background and experience:
+        professional_prompt = f"""Analyze the candidate's professional background and experience. Format your response in clear, well-structured markdown.
 
 {context_data}
 
-Focus on:
-1. Work experience relevance
-2. Career progression
-3. Company quality and reputation
-4. Role responsibilities alignment
-5. Professional networking and presence
+**CRITICAL FORMATTING REQUIREMENTS:**
+- Use proper markdown headers (##, ###)
+- Include bullet points and numbered lists
+- Use **bold** for company names, titles, and key metrics
+- Use tables for career progression timeline
+- Include LinkedIn stats and professional metrics
+- Make career data easily scannable
 
-Provide insights on their career trajectory and professional maturity."""
+**Content Structure:**
+### 💼 Career Progression Analysis
+- **Current Role & Company**: Position and organization quality
+- **Career Trajectory**: Growth pattern and advancement
+- **Industry Experience**: Domain expertise and transitions
+
+### 🏢 Company & Role Quality Assessment
+- **Organization Tiers**: Startup, mid-size, enterprise experience
+- **Role Complexity**: Responsibilities and impact scope
+- **Market Reputation**: Employer brand and industry standing
+
+### 🤝 Professional Networking & Presence
+- **LinkedIn Activity**: Technical posts and engagement
+- **Industry Connections**: Network quality and size
+- **Thought Leadership**: Professional content and visibility
+
+### 📈 Experience Alignment Score
+Rate how well their background matches the target role requirements.
+
+Be specific with company names, role details, and measurable professional achievements."""
 
         professional_response = await llm.ainvoke([
-            SystemMessage(content="You are a professional background analyst. Evaluate career progression and experience quality."),
+            SystemMessage(content="You are a professional background analyst. Evaluate career progression and experience quality. Format all responses in clean, well-structured markdown with proper headers, bullet points, and line breaks."),
             HumanMessage(content=professional_prompt)
         ])
         
@@ -194,23 +276,57 @@ Provide insights on their career trajectory and professional maturity."""
         await asyncio.sleep(0.8)
         
         # Stream Part 4: Strengths and Weaknesses
-        print("DEBUG: Generating strengths and weaknesses with LLM")
         await manager.send_final_analysis_stream(analysis_id, "🔄 **Identifying strengths and improvement areas...**")
         
-        swot_prompt = f"""Provide a detailed SWOT-style analysis of this candidate:
+        swot_prompt = f"""Provide a detailed SWOT-style analysis of this candidate. Format your response in clear, well-structured markdown.
+
+🚨 CRITICAL RULE: You MUST ONLY evaluate the candidate against the exact skills, technologies, and requirements explicitly listed in the job description. DO NOT evaluate against any other skills, frameworks, or technologies not mentioned in the job requirements.
 
 {context_data}
 
-Structure your response as:
-1. **Key Strengths** - What makes them stand out
-2. **Areas of Concern** - Potential weaknesses or gaps
-3. **Improvement Recommendations** - Specific actionable advice
-4. **Growth Potential** - Their potential for development
+**FORBIDDEN ACTIONS - DO NOT DO THESE:**
+❌ Do NOT mention skills like Java, Go, AWS, GCP, Redis, Docker, Kubernetes unless they are explicitly listed in the job requirements above
+❌ Do NOT evaluate against "commonly expected" skills for the role type
+❌ Do NOT assume additional technical requirements beyond what is stated in the job description
+❌ Do NOT use phrases like "typically required for this role" or "standard for this position"
+❌ Do NOT mention ANY technology, framework, or skill that is not explicitly listed in the REQUIRED or PREFERRED skills above
+❌ Do NOT create "technical gaps" for skills not mentioned in the job requirements
 
-Be specific and provide actionable insights. Consider both technical and soft skills."""
+**CRITICAL FORMATTING REQUIREMENTS:**
+- Use proper markdown headers (##, ###)
+- Include bullet points and numbered lists with specific examples
+- Use **bold** for key strengths and critical gaps
+- Use ✅ for strengths, ⚠️ for concerns, 📈 for opportunities
+- Include priority levels (High/Medium/Low) for recommendations
+- Make actionable insights clearly identifiable
+
+**Content Structure:**
+### ✅ Key Strengths & Competitive Advantages
+1. **Technical Excellence**: Only mention technical capabilities relevant to job requirements
+2. **Professional Experience**: Career highlights and achievements relevant to job requirements
+3. **Domain Expertise**: Industry knowledge and specializations mentioned in job requirements
+4. **Soft Skills**: Communication, leadership, collaboration as relevant to the specific role
+
+### ⚠️ Areas of Concern & Risk Factors
+1. **Technical Gaps**: ONLY mention missing skills that are explicitly listed in the job requirements above
+2. **Experience Limitations**: Role or industry experience gaps relative to specific job requirements
+3. **Portfolio Weaknesses**: Project or code quality concerns relevant to the technologies mentioned in job requirements
+4. **Professional Risks**: Potential culture or performance risks specific to this exact role
+
+**MANDATORY RULE**: Only mention missing skills if they are explicitly listed in the job requirements. Do not create gaps for technologies not mentioned in the job description.
+
+### 🎯 Development Recommendations
+1. **Immediate Priorities** (High): Critical skills to develop
+2. **Medium-term Goals** (Medium): Growth opportunities  
+3. **Long-term Potential** (Low): Future development areas
+
+### 📈 Growth Potential Assessment
+Evaluate their capacity for learning, adaptation, and advancement in the role.
+
+Be specific with examples, priorities, and actionable development paths."""
 
         swot_response = await llm.ainvoke([
-            SystemMessage(content="You are a talent assessment expert. Provide balanced, actionable strengths and weaknesses analysis."),
+            SystemMessage(content="You are a talent assessment expert. 🚨 CRITICAL: Provide balanced, actionable strengths and weaknesses analysis. ONLY evaluate against the specific skills and requirements mentioned in the job description. DO NOT mention skills like Java, Go, AWS, GCP, Redis unless they are explicitly listed in the job requirements. DO NOT create technical gaps for skills not mentioned in the job requirements. Format all responses in clean, well-structured markdown with proper headers, bullet points, and line breaks."),
             HumanMessage(content=swot_prompt)
         ])
         
@@ -225,12 +341,20 @@ Be specific and provide actionable insights. Consider both technical and soft sk
         await asyncio.sleep(0.8)
         
         # Stream Part 5: Hiring Recommendation
-        print("DEBUG: Generating final hiring recommendation with LLM")
         await manager.send_final_analysis_stream(analysis_id, "🔄 **Formulating hiring recommendation...**")
         
         recommendation_prompt = f"""Provide a comprehensive hiring recommendation based on all analysis:
 
+🚨 CRITICAL RULE: You MUST ONLY evaluate the candidate against the exact skills, technologies, and requirements explicitly listed in the job description. DO NOT evaluate against any other skills, frameworks, or technologies not mentioned in the job requirements.
+
 {context_data}
+
+**FORBIDDEN ACTIONS - DO NOT DO THESE:**
+❌ Do NOT mention skills like Java, Go, AWS, GCP, Redis, Docker, Kubernetes unless they are explicitly listed in the job requirements above
+❌ Do NOT evaluate against "commonly expected" skills for the role type
+❌ Do NOT assume additional technical requirements beyond what is stated in the job description
+❌ Do NOT penalize the candidate for not having skills that aren't required for the job
+❌ Do NOT mention ANY technology, framework, or skill that is not explicitly listed in the REQUIRED or PREFERRED skills above
 
 Current Score: {final_score}/100
 Current Recommendation: {recommendation}
@@ -246,7 +370,7 @@ Provide:
 Be decisive but balanced. Consider both current capabilities and growth potential."""
 
         recommendation_response = await llm.ainvoke([
-            SystemMessage(content="You are a senior hiring manager. Make clear, decisive hiring recommendations with full justification."),
+            SystemMessage(content="You are a senior hiring manager. 🚨 CRITICAL: Make clear, decisive hiring recommendations with full justification. Base your assessment ONLY on the specific skills and requirements mentioned in the job description. DO NOT mention skills like Java, Go, AWS, GCP, Redis unless they are explicitly listed in the job requirements. DO NOT penalize candidates for not having skills that aren't required for the job. Format all responses in clean, well-structured markdown with proper headers, bullet points, and line breaks."),
             HumanMessage(content=recommendation_prompt)
         ])
         
@@ -264,7 +388,6 @@ Be decisive but balanced. Consider both current capabilities and growth potentia
         await asyncio.sleep(0.8)
         
         # Stream Part 6: Metadata and Completion
-        print("DEBUG: Generating analysis metadata")
         metadata_section = f"""## 📊 Analysis Metadata
 
 - **Analysis Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -281,16 +404,13 @@ Be decisive but balanced. Consider both current capabilities and growth potentia
         
         await manager.send_final_analysis_stream(analysis_id, metadata_section, is_complete=True)
         
-        print("DEBUG: LLM streaming analysis completed successfully")
         
         # Return combined report for storage
         full_report = executive_summary + technical_section + professional_section + swot_section + recommendation_section + metadata_section
         return full_report
         
     except Exception as e:
-        print(f"DEBUG: Error in LLM streaming analysis: {e}")
         import traceback
-        print(f"DEBUG: LLM streaming error traceback: {traceback.format_exc()}")
         
         error_message = f"""# Analysis Report - Error
 

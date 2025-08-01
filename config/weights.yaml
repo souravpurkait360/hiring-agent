@@ -1,11 +1,31 @@
-default_weights:
-  resume_jd_match: 0.25
-  github_analysis: 0.20
-  linkedin_analysis: 0.10
-  technical_blogs: 0.15
-  project_quality: 0.15
-  work_experience: 0.10
-  social_presence: 0.05
+# Weight configurations for different candidate types
+weight_modes:
+  professional:
+    name: "Working Professionals"
+    description: "Optimized for experienced candidates with work history"
+    weights:
+      resume_jd_match: 0.20      # 20% - Solid foundation
+      github_analysis: 0.15      # 15% - Code quality matters
+      linkedin_analysis: 0.15    # 15% - Professional presence
+      technical_blogs: 0.10      # 10% - Thought leadership
+      project_quality: 0.10      # 10% - Side projects/portfolio
+      work_experience: 0.25      # 25% - Most important for professionals
+      social_presence: 0.05      # 5% - Nice to have
+  
+  fresher:
+    name: "Interns & Freshers"
+    description: "Optimized for new graduates and entry-level candidates"
+    weights:
+      resume_jd_match: 0.25      # 25% - Foundation skills crucial
+      github_analysis: 0.30      # 30% - Code portfolio very important
+      linkedin_analysis: 0.05    # 5% - Less important for freshers
+      technical_blogs: 0.05      # 5% - Rare for freshers
+      project_quality: 0.25      # 25% - Academic/personal projects crucial
+      work_experience: 0.05      # 5% - Limited experience expected
+      social_presence: 0.05      # 5% - Nice to have
+
+# Default mode selection
+default_mode: "professional"
 
 platform_weights:
   github:

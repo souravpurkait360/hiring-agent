@@ -9,7 +9,8 @@ import asyncio
 
 class ProjectService:
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def evaluate_project(self, project: Dict) -> ProjectAnalysis:
         project_url = project.get("url", "")

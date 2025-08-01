@@ -10,7 +10,8 @@ class GitHubService:
     def __init__(self):
         self.token = os.getenv("GITHUB_TOKEN")
         self.headers = {"Authorization": f"token {self.token}"} if self.token else {}
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0.1)
+        from config.settings import settings
+        self.llm = ChatOpenAI(model=settings.get_model(), temperature=0.1)
     
     async def analyze_profile(self, username: str, domain: str) -> GitHubAnalysis:
         try:

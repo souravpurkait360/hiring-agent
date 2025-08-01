@@ -29,6 +29,182 @@
             }
         }
     </script>
+    <style>
+        /* Circular Progress Bar Styles */
+        .circular-progress {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .circular-progress:hover {
+            transform: scale(1.05);
+        }
+        
+        .progress-ring {
+            transform: rotate(-90deg);
+            width: 80px;
+            height: 80px;
+        }
+        
+        .progress-ring__circle {
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            stroke-linecap: round;
+        }
+        
+        .progress-ring__background {
+            stroke: #e5e7eb;
+            stroke-width: 4;
+            fill: transparent;
+        }
+        
+        .progress-ring__progress {
+            stroke: #3b82f6;
+            stroke-width: 4;
+            fill: transparent;
+        }
+        
+        .progress-ring__progress.completed {
+            stroke: #10b981;
+        }
+        
+        .progress-ring__progress.failed {
+            stroke: #ef4444;
+        }
+        
+        .progress-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        
+        .progress-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 2px;
+            color: #6b7280;
+        }
+        
+        .progress-icon.completed {
+            color: #10b981;
+        }
+        
+        .progress-icon.failed {
+            color: #ef4444;
+        }
+        
+        .progress-percentage {
+            font-size: 10px;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .analysis-label {
+            margin-top: 8px;
+            font-size: 12px;
+            text-align: center;
+            color: #6b7280;
+            font-weight: 500;
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Tooltip Styles */
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+            margin-bottom: 8px;
+        }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #1f2937;
+        }
+        
+        .circular-progress:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Pulse Animation for In Progress */
+        .pulse-progress {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        /* Analysis Grid Layout */
+        .analysis-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .analysis-grid {
+                gap: 16px;
+            }
+            
+            .circular-progress {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .progress-ring {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .progress-icon {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -170,43 +346,79 @@ Responsibilities:
                 </div>
             </div>
 
+            <!-- Weight Mode Selection Section -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-4">Evaluation Mode</h3>
+                <div class="grid md:grid-cols-2 gap-4 mb-4">
+                    <div class="border border-gray-200 rounded-lg p-4 cursor-pointer transition-all hover:border-primary hover:shadow-md" id="professionalMode">
+                        <div class="flex items-center mb-2">
+                            <input type="radio" name="weightMode" value="professional" id="professionalModeRadio" class="mr-3" checked>
+                            <h4 class="font-semibold text-gray-800">Working Professionals</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Optimized for experienced candidates with work history</p>
+                        <div class="text-xs text-gray-500">
+                            <div class="flex justify-between"><span>Work Experience:</span><span class="font-medium">25%</span></div>
+                            <div class="flex justify-between"><span>Resume-JD Match:</span><span class="font-medium">20%</span></div>
+                            <div class="flex justify-between"><span>Code Quality (GitHub):</span><span class="font-medium">15%</span></div>
+                            <div class="flex justify-between"><span>Professional Presence:</span><span class="font-medium">15%</span></div>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 cursor-pointer transition-all hover:border-primary hover:shadow-md" id="fresherMode">
+                        <div class="flex items-center mb-2">
+                            <input type="radio" name="weightMode" value="fresher" id="fresherModeRadio" class="mr-3">
+                            <h4 class="font-semibold text-gray-800">Interns & Freshers</h4>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-2">Optimized for new graduates and entry-level candidates</p>
+                        <div class="text-xs text-gray-500">
+                            <div class="flex justify-between"><span>Code Portfolio (GitHub):</span><span class="font-medium">30%</span></div>
+                            <div class="flex justify-between"><span>Resume-JD Match:</span><span class="font-medium">25%</span></div>
+                            <div class="flex justify-between"><span>Projects Quality:</span><span class="font-medium">25%</span></div>
+                            <div class="flex justify-between"><span>Work Experience:</span><span class="font-medium">5%</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500">
+                    💡 Choose the evaluation mode that best matches your candidate type. You can still customize individual weights below.
+                </div>
+            </div>
+
             <!-- Custom Weights Section -->
             <div class="mb-6">
                 <h3 class="text-lg font-medium mb-4">Custom Weights (Optional)</h3>
                 <div class="grid md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Resume-JD Match</label>
-                        <input type="range" id="resumeJdMatch" min="0" max="1" step="0.05" value="0.25" 
+                        <input type="range" id="resumeJdMatch" min="0" max="1" step="0.01" value="0.25" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="resumeJdMatchValue">0.25</span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">GitHub Analysis</label>
-                        <input type="range" id="githubAnalysis" min="0" max="1" step="0.05" value="0.20" 
+                        <input type="range" id="githubAnalysis" min="0" max="1" step="0.01" value="0.20" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="githubAnalysisValue">0.20</span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">LinkedIn Analysis</label>
-                        <input type="range" id="linkedinAnalysis" min="0" max="1" step="0.05" value="0.10" 
+                        <input type="range" id="linkedinAnalysis" min="0" max="1" step="0.01" value="0.10" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="linkedinAnalysisValue">0.10</span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Technical Blogs</label>
-                        <input type="range" id="technicalBlogs" min="0" max="1" step="0.05" value="0.15" 
+                        <input type="range" id="technicalBlogs" min="0" max="1" step="0.01" value="0.15" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="technicalBlogsValue">0.15</span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Project Quality</label>
-                        <input type="range" id="projectQuality" min="0" max="1" step="0.05" value="0.15" 
+                        <input type="range" id="projectQuality" min="0" max="1" step="0.01" value="0.15" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="projectQualityValue">0.15</span>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Work Experience</label>
-                        <input type="range" id="workExperience" min="0" max="1" step="0.05" value="0.10" 
+                        <input type="range" id="workExperience" min="0" max="1" step="0.01" value="0.10" 
                                class="w-full">
                         <span class="text-sm text-gray-500" id="workExperienceValue">0.10</span>
                     </div>
@@ -232,9 +444,9 @@ Responsibilities:
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </div>
-                <div id="progressCollapse" class="px-6 py-4">
-                    <div id="progressTasks" class="space-y-3">
-                        <!-- Progress tasks will be dynamically added here -->
+                <div id="progressCollapse" class="px-6 py-6">
+                    <div id="analysisProgress" class="analysis-grid">
+                        <!-- Circular progress indicators will be dynamically added here -->
                     </div>
                 </div>
             </div>
@@ -257,10 +469,7 @@ Responsibilities:
 
             <!-- Results Section -->
             <div id="resultsSection" class="bg-white rounded-lg shadow-lg hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-800">Final Analysis Results</h2>
-                </div>
-                <div class="px-6 py-6">
+                <div class="px-4 py-4">
                     <div id="resultsContent">
                         <!-- Results will be dynamically added here -->
                     </div>

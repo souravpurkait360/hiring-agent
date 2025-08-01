@@ -9,8 +9,9 @@ def get_openai_client():
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     
+    from config.settings import settings
     return ChatOpenAI(
-        model="gpt-4",
+        model=settings.get_model(),
         temperature=0.1,
         openai_api_key=api_key
     )
