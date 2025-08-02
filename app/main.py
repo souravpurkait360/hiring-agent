@@ -1,7 +1,15 @@
 import os
 from dotenv import load_dotenv
+import logging
 
+# Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper()),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,9 +29,14 @@ from app.api.websocket_manager import manager
 
 app = FastAPI(title="Hiring Agent API", version="1.0.0")
 
+# Configure CORS based on environment
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+if cors_origins == ["*"]:
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -127,7 +140,37 @@ async def parse_resume(file: UploadFile = File(...)):
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now()}
+    """Enhanced health check for production monitoring"""
+    try:
+        # Check if OpenAI API key is configured
+        openai_configured = bool(os.getenv("OPENAI_API_KEY"))
+        
+        # Basic system checks
+        health_status = {
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "environment": os.getenv("ENVIRONMENT", "development"),
+            "services": {
+                "openai": openai_configured,
+                "websockets": True,  # WebSocket manager is always available
+                "file_upload": True  # File upload is always available
+            },
+            "version": "1.0.0"
+        }
+        
+        # If any critical service is down, mark as unhealthy
+        if not openai_configured:
+            health_status["status"] = "degraded"
+            health_status["warnings"] = ["OpenAI API key not configured"]
+        
+        return health_status
+        
+    except Exception as e:
+        return {
+            "status": "unhealthy", 
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }
 
 @app.get("/api/weights")
 async def get_weights():
@@ -278,4 +321,15 @@ Analysis completed successfully. Detailed breakdown available in the progress tr
     )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Development server configuration
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+    debug = os.getenv("ENVIRONMENT", "development") == "development"
+    
+    uvicorn.run(
+        app, 
+        host=host, 
+        port=port,
+        reload=debug,
+        log_level="info" if not debug else "debug"
+    )
