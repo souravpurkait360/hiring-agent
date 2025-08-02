@@ -1,18 +1,37 @@
+# Core web framework and server
 fastapi>=0.104.1
 uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
+
+# AI/ML and graph frameworks
 langgraph>=0.2.16
 langchain>=0.2.16
 langchain-openai>=0.1.25
+
+# HTTP and async support
+httpx>=0.25.2
+aiofiles>=23.2.1
 python-multipart>=0.0.6
 websockets>=12.0
-aiofiles>=23.2.1
-httpx>=0.25.2
+
+# Web scraping and parsing
 beautifulsoup4>=4.12.2
+
+# Configuration and environment
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
-pytest>=7.4.3
-pytest-asyncio>=0.21.1
+
+# Document processing
 PyPDF2>=3.0.1
 python-docx>=0.8.11
 pdfplumber>=0.9.0
+
+# Testing framework
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+
+# Optional dependencies for enhanced functionality
+openai>=1.0.0  # Direct OpenAI API client if needed
+requests>=2.31.0  # For HTTP requests in services
+lxml>=4.9.0  # Enhanced XML/HTML parsing
+pillow>=10.0.0  # Image processing for documents
