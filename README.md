@@ -23,6 +23,12 @@ An AI-powered hiring agent that analyzes job descriptions and resumes, then perf
 - 📈 **Comprehensive Scoring**: 0-100 scale with hire/no-hire recommendations
 - 📋 **Detailed Reports**: In-depth analysis with actionable insights
 
+## 🎥 Product Demo
+
+Watch the hiring agent in action:
+
+https://drive.google.com/file/d/17WVbFJAJZRKtPOECBhq6RkbTZ_OynsWq/view?usp=sharing
+
 ## 🛠️ Tech Stack
 
 - **Backend**: FastAPI, LangGraph, Pydantic
