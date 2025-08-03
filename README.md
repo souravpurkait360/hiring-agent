@@ -27,7 +27,7 @@ An AI-powered hiring agent that analyzes job descriptions and resumes, then perf
 
 Watch the hiring agent in action:
 
-https://drive.google.com/file/d/17WVbFJAJZRKtPOECBhq6RkbTZ_OynsWq/view?usp=sharing
+[![Demo Video](https://img.youtube.com/vi/EPajpaAUbx4/0.jpg)](https://youtu.be/EPajpaAUbx4)
 
 ## 🛠️ Tech Stack
 
